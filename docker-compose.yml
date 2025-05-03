@@ -1,0 +1,58 @@
+# version: '3'
+
+services:
+  simulation:
+    build: .
+    container_name: led-simulation
+    depends_on:
+      - influxdb
+    networks:
+      - sim-network
+    restart: unless-stopped
+    environment:
+      # Example: Set the hostname for sending data to InfluxDB (resolved by service name)
+      - INFLUXDB_HOST=influxdb
+      - INFLUXDB_PORT=8086
+    # You can add port mapping or other environment variables as needed
+    # ports:
+    #   - "8000:8000"
+
+  influxdb:
+    image: influxdb:2.0
+    container_name: influxdb
+    ports:
+      - "8086:8086"
+    environment:
+      - DOCKER_INFLUXDB_INIT_MODE=setup
+      - DOCKER_INFLUXDB_INIT_USERNAME=admin
+      - DOCKER_INFLUXDB_INIT_PASSWORD=admin123
+      - DOCKER_INFLUXDB_INIT_ORG=my-org
+      - DOCKER_INFLUXDB_INIT_BUCKET=simulation_db
+      - DOCKER_INFLUXDB_INIT_RETENTION=0
+      - DOCKER_INFLUXDB_INIT_ADMIN_TOKEN=my-super-secret-token
+    volumes:
+      - influxdb-data:/var/lib/influxdb2
+    networks:
+      - sim-network
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    depends_on:
+      - influxdb
+    networks:
+      - sim-network
+    restart: unless-stopped
+    volumes:
+      - grafana-data:/var/lib/grafana
+
+networks:
+  sim-network:
+
+volumes:
+  influxdb-data:
+  grafana-data:
+
